@@ -59,9 +59,10 @@ bool skinFitsScreenSize(
 
 } // namespace
 
-DlgPrefInterface::DlgPrefInterface(QWidget* parent,
+DlgPrefInterface::DlgPrefInterface(
+        QWidget* parent,
         MixxxMainWindow* mixxx,
-        SkinLoader* pSkinLoader,
+        std::shared_ptr<SkinLoader> pSkinLoader,
         UserSettingsPointer pConfig)
         : DlgPreferencePage(parent),
           m_pConfig(pConfig),
@@ -70,7 +71,6 @@ DlgPrefInterface::DlgPrefInterface(QWidget* parent,
           m_dScaleFactorAuto(1.0),
           m_bUseAutoScaleFactor(false),
           m_dScaleFactor(1.0),
-          m_dDevicePixelRatio(1.0),
           m_bStartWithFullScreen(false),
           m_bRebootMixxxView(false) {
     setupUi(this);

@@ -52,20 +52,19 @@
 #include "util/widgethelper.h"
 
 DlgPreferences::DlgPreferences(
-        MixxxMainWindow* pMixxx,
-        SkinLoader* pSkinLoader,
-        SoundManager* pSoundManager,
-        PlayerManager* pPlayerManager,
-        ControllerManager* pControllerManager,
-        VinylControlManager* pVCManager,
+        MixxxMainWindow* mixxx,
+        std::shared_ptr<SkinLoader> pSkinLoader,
+        std::shared_ptr<SoundManager> soundman,
+        std::shared_ptr<PlayerManager> pPlayerManager,
+        std::shared_ptr<ControllerManager> pControllerManager,
+        std::shared_ptr<VinylControlManager> pVCManager,
         LV2Backend* pLV2Backend,
-        EffectsManager* pEffectsManager,
-        SettingsManager* pSettingsManager,
-        Library* pLibrary)
-        : m_pConfig(pSettingsManager->settings()), m_pageSizeHint(QSize(0, 0)) {
-#ifndef __VINYLCONTROL__
-    Q_UNUSED(pVCManager);
-#endif // __VINYLCONTROL__
+        std::shared_ptr<EffectsManager> pEffectsManager,
+        std::shared_ptr<SettingsManager> pSettingsManager,
+        std::shared_ptr<Library> pLibrary)
+        : m_allPages(),
+          m_pConfig(pSettingsManager->settings()),
+          m_pageSizeHint(QSize(0, 0)) {
 #ifndef __LILV__
     Q_UNUSED(pLV2Backend);
 #endif // __LILV__
@@ -116,7 +115,10 @@ DlgPreferences::DlgPreferences(
     addPageWidget(m_controllersPage,
             m_pControllersRootButton,
             tr("Controllers"),
-            "ic_preferences_controllers.svg");
+            QIcon(":/images/preferences/ic_preferences_controllers.svg"));
+    m_pControllersDlg = new DlgPrefControllers(
+            this, m_pConfig, pControllerManager, pControllersTreeItem);
+    addPageWidget(PreferencesPage(m_pControllersDlg, pControllersTreeItem));
 
 #ifdef __VINYLCONTROL__
     // It's important for this to be before the connect for wsound.

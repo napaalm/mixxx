@@ -5,9 +5,8 @@
 #include <QTextCodec>
 #include <QThread>
 #include <QtDebug>
-#include <cstdio>
-#include <stdexcept>
 
+#include "coreservices.h"
 #include "errordialoghandler.h"
 #include "mixxx.h"
 #include "mixxxapplication.h"
@@ -24,7 +23,8 @@ constexpr int kFatalErrorOnStartupExitCode = 1;
 constexpr int kParseCmdlineArgsErrorExitCode = 2;
 
 int runMixxx(MixxxApplication* app, const CmdlineArgs& args) {
-    MixxxMainWindow mainWindow(app, args);
+    auto coreServices = std::make_shared<mixxx::CoreServices>(args);
+    MixxxMainWindow mainWindow(app, coreServices);
     // If startup produced a fatal error, then don't even start the
     // Qt event loop.
     if (ErrorDialogHandler::instance()->checkError()) {

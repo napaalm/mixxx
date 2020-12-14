@@ -2,6 +2,7 @@
 
 #include <QHash>
 #include <QSortFilterProxyModel>
+#include <memory>
 
 #include "controllers/controllerinputmappingtablemodel.h"
 #include "controllers/controlleroutputmappingtablemodel.h"
@@ -9,7 +10,7 @@
 #include "controllers/controllerpresetinfo.h"
 #include "controllers/dlgcontrollerlearning.h"
 #include "controllers/ui_dlgprefcontrollerdlg.h"
-#include "preferences/dialog/dlgpreferencepage.h"
+#include "preferences/dlgpreferencepage.h"
 #include "preferences/usersettings.h"
 
 // Forward declarations
@@ -21,9 +22,10 @@ class PresetInfoEnumerator;
 class DlgPrefController : public DlgPreferencePage {
     Q_OBJECT
   public:
-    DlgPrefController(QWidget *parent, Controller* controller,
-                      ControllerManager* controllerManager,
-                      UserSettingsPointer pConfig);
+    DlgPrefController(QWidget* parent,
+            Controller* controller,
+            std::shared_ptr<ControllerManager> controllerManager,
+            UserSettingsPointer pConfig);
     virtual ~DlgPrefController();
 
     QUrl helpUrl() const override;
@@ -108,7 +110,7 @@ class DlgPrefController : public DlgPreferencePage {
     Ui::DlgPrefControllerDlg m_ui;
     UserSettingsPointer m_pConfig;
     const QString m_pUserDir;
-    ControllerManager* m_pControllerManager;
+    std::shared_ptr<ControllerManager> m_pControllerManager;
     Controller* m_pController;
     ControlPickerMenu* m_pControlPickerMenu;
     DlgControllerLearning* m_pDlgControllerLearning;

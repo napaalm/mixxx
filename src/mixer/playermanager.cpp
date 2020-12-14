@@ -45,7 +45,6 @@ QAtomicPointer<ControlProxy> PlayerManager::m_pCOPNumPreviewDecks;
 PlayerManager::PlayerManager(UserSettingsPointer pConfig,
         SoundManager* pSoundManager,
         EffectsManager* pEffectsManager,
-        VisualsManager* pVisualsManager,
         EngineMaster* pEngine)
         :
 #if QT_VERSION < QT_VERSION_CHECK(5, 14, 0)
@@ -54,7 +53,6 @@ PlayerManager::PlayerManager(UserSettingsPointer pConfig,
           m_pConfig(pConfig),
           m_pSoundManager(pSoundManager),
           m_pEffectsManager(pEffectsManager),
-          m_pVisualsManager(pVisualsManager),
           m_pEngine(pEngine),
           // NOTE(XXX) LegacySkinParser relies on these controls being Controls
           // and not ControlProxies.
@@ -161,6 +159,20 @@ void PlayerManager::bindToLibrary(Library* pLibrary) {
                 this,
                 &PlayerManager::slotAnalyzeTrack);
     }
+}
+
+QStringList PlayerManager::getVisualPlayerGroups() {
+    QStringList groups;
+    for (const auto& pDeck : std::as_const(m_decks)) {
+        groups.append(pDeck->getGroup());
+    }
+    for (const auto& pPreview : std::as_const(m_previewDecks)) {
+        groups.append(pPreview->getGroup());
+    }
+    for (const auto& pSampler : std::as_const(m_samplers)) {
+        groups.append(pSampler->getGroup());
+    }
+    return groups;
 }
 
 // static
@@ -375,13 +387,12 @@ void PlayerManager::addDeckInner() {
 
     int number = m_decks.count() + 1;
 
-    EngineChannel::ChannelOrientation orientation = EngineChannel::LEFT;
-    if (number % 2 == 0) {
-        orientation = EngineChannel::RIGHT;
-    }
-
-    Deck* pDeck = new Deck(this, m_pConfig, m_pEngine, m_pEffectsManager,
-            m_pVisualsManager, orientation, group);
+    Deck* pDeck = new Deck(this,
+            m_pConfig,
+            m_pEngine,
+            m_pEffectsManager,
+            deckIndex % 2 == 1 ? EngineChannel::RIGHT : EngineChannel::LEFT,
+            handleGroup);
     connect(pDeck->getEngineDeck(),
             &EngineDeck::noPassthroughInputConfigured,
             this,
@@ -449,8 +460,12 @@ void PlayerManager::addSamplerInner() {
     // All samplers are in the center
     EngineChannel::ChannelOrientation orientation = EngineChannel::CENTER;
 
-    Sampler* pSampler = new Sampler(this, m_pConfig, m_pEngine,
-            m_pEffectsManager, m_pVisualsManager, orientation, group);
+    Sampler* pSampler = new Sampler(this,
+            m_pConfig,
+            m_pEngine,
+            m_pEffectsManager,
+            orientation,
+            handleGroup);
     if (m_pTrackAnalysisScheduler) {
         connect(pSampler, &BaseTrackPlayer::newTrackLoaded, this, &PlayerManager::slotAnalyzeTrack);
     }
@@ -474,8 +489,12 @@ void PlayerManager::addPreviewDeckInner() {
     // All preview decks are in the center
     EngineChannel::ChannelOrientation orientation = EngineChannel::CENTER;
 
-    PreviewDeck* pPreviewDeck = new PreviewDeck(this, m_pConfig, m_pEngine,
-            m_pEffectsManager, m_pVisualsManager, orientation, group);
+    PreviewDeck* pPreviewDeck = new PreviewDeck(this,
+            m_pConfig,
+            m_pEngine,
+            m_pEffectsManager,
+            orientation,
+            handleGroup);
     if (m_pTrackAnalysisScheduler) {
         connect(pPreviewDeck,
                 &BaseTrackPlayer::newTrackLoaded,

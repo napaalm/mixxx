@@ -43,7 +43,6 @@ BaseTrackPlayerImpl::BaseTrackPlayerImpl(QObject* pParent,
         UserSettingsPointer pConfig,
         EngineMaster* pMixingEngine,
         EffectsManager* pEffectsManager,
-        VisualsManager* pVisualsManager,
         EngineChannel::ChannelOrientation defaultOrientation,
         const QString& group,
         bool defaultMaster,
@@ -192,10 +191,8 @@ BaseTrackPlayerImpl::BaseTrackPlayerImpl(QObject* pParent,
     m_pPlay = make_parented<ControlProxy>(group, "play", this);
     m_pPlay->connectValueChanged(this, &BaseTrackPlayerImpl::slotPlayToggled);
 
-    m_pRateRatio = make_parented<ControlProxy>(group, "rate_ratio", this);
-    m_pPitchAdjust = make_parented<ControlProxy>(group, "pitch_adjust", this);
-
-    pVisualsManager->addDeck(group);
+    m_pRateRatio = make_parented<ControlProxy>(getGroup(), "rate_ratio", this);
+    m_pPitchAdjust = make_parented<ControlProxy>(getGroup(), "pitch_adjust", this);
 }
 
 BaseTrackPlayerImpl::~BaseTrackPlayerImpl() {

@@ -5,6 +5,7 @@
 #include <QString>
 #include <memory>
 
+#include "coreservices.h"
 #include "preferences/configobject.h"
 #include "preferences/constants.h"
 #include "preferences/usersettings.h"
@@ -47,13 +48,10 @@ typedef QSharedPointer<SettingsManager> SettingsManagerPointer;
 class MixxxMainWindow : public QMainWindow {
     Q_OBJECT
   public:
-    // Constructor. files is a list of command line arguments
-    MixxxMainWindow(QApplication *app, const CmdlineArgs& args);
+    MixxxMainWindow(QApplication* app, std::shared_ptr<mixxx::CoreServices> pCoreServices);
     ~MixxxMainWindow() override;
 
-    void finalize();
-
-    // creates the menu_bar and inserts the file Menu
+    /// creates the menu_bar and inserts the file Menu
     void createMenuBar();
     void connectMenuBar();
     void setInhibitScreensaver(mixxx::ScreenSaverPreference inhibit);
@@ -68,9 +66,7 @@ class MixxxMainWindow : public QMainWindow {
     void rebootMixxxView();
 
     void slotFileLoadSongPlayer(int deck);
-    // toggle keyboard on-off
-    void slotOptionsKeyboard(bool toggle);
-    // Preference dialog
+    /// show the preferences dialog
     void slotOptionsPreferences();
     // shows an about dlg
     void slotHelpAbout();
@@ -101,18 +97,15 @@ class MixxxMainWindow : public QMainWindow {
     bool eventFilter(QObject *obj, QEvent *event) override;
     void closeEvent(QCloseEvent *event) override;
 
+  private slots:
+    void initializationProgressUpdate(int progress, const QString& serviceName);
+
   private:
-    void initialize(QApplication *app, const CmdlineArgs& args);
-
-    // progresses the launch image progress bar
-    // this must be called from the GUi thread only
-    void launchProgress(int progress);
-
     void initializeWindow();
-    void initializeKeyboard();
     void checkDirectRendering();
 
-    bool initializeDatabase();
+    /// Load skin to a QWidget that we set as the central widget.
+    bool loadConfiguredSkin();
 
     bool confirmExit();
     QDialog::DialogCode soundDeviceErrorDlg(
@@ -122,48 +115,14 @@ class MixxxMainWindow : public QMainWindow {
             SoundDeviceError err, bool* retryClicked);
     QDialog::DialogCode noOutputDlg(bool* continueClicked);
 
-    // Pointer to the root GUI widget
-    QWidget* m_pWidgetParent;
+    std::shared_ptr<mixxx::CoreServices> m_pCoreServices;
+
+    QWidget* m_pCentralWidget;
     LaunchImage* m_pLaunchImage;
 
-    std::unique_ptr<SettingsManager> m_pSettingsManager;
-
-    // The effects processing system
-    EffectsManager* m_pEffectsManager;
-
-    // The mixing engine.
-    EngineMaster* m_pEngine;
-
-    // The skin loader.
-    // TODO(rryan): doesn't need to be a member variable
-    SkinLoader* m_pSkinLoader;
-
-    // The sound manager
-    SoundManager* m_pSoundManager;
-
-    // Keeps track of players
-    PlayerManager* m_pPlayerManager;
-    // RecordingManager
-    RecordingManager* m_pRecordingManager;
-#ifdef __BROADCAST__
-    BroadcastManager* m_pBroadcastManager;
-#endif
-    ControllerManager* m_pControllerManager;
-
+    std::shared_ptr<SkinLoader> m_pSkinLoader;
     GuiTick* m_pGuiTick;
     VisualsManager* m_pVisualsManager;
-
-    VinylControlManager* m_pVCManager;
-
-    KeyboardEventFilter* m_pKeyboard;
-
-    // The Mixxx database connection pool
-    mixxx::DbConnectionPoolPtr m_pDbConnectionPool;
-
-    TrackCollectionManager* m_pTrackCollectionManager;
-
-    // The library management object
-    Library* m_pLibrary;
 
     parented_ptr<WMainMenuBar> m_pMenuBar;
 
@@ -172,20 +131,10 @@ class MixxxMainWindow : public QMainWindow {
     /** Pointer to preference dialog */
     DlgPreferences* m_pPrefDlg;
 
-    ConfigObject<ConfigValueKbd>* m_pKbdConfig;
-    ConfigObject<ConfigValueKbd>* m_pKbdConfigEmpty;
-
     mixxx::TooltipsPreference m_toolTipsCfg;
-    // Timer that tracks how long Mixxx has been running.
-    Timer m_runtime_timer;
-
-    const CmdlineArgs& m_cmdLineArgs;
 
     ControlPushButton* m_pTouchShift;
     mixxx::ScreenSaverPreference m_inhibitScreensaver;
 
     QSet<ControlObject*> m_skinCreatedControls;
-
-    static const int kMicrophoneCount;
-    static const int kAuxiliaryCount;
 };

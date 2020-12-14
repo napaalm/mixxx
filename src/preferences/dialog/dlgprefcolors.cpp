@@ -24,7 +24,9 @@ const ConfigKey kHotcueDefaultColorIndexConfigKey("[Controls]", "HotcueDefaultCo
 } // anonymous namespace
 
 DlgPrefColors::DlgPrefColors(
-        QWidget* parent, UserSettingsPointer pConfig, Library* pLibrary)
+        QWidget* parent,
+        UserSettingsPointer pConfig,
+        std::shared_ptr<Library> pLibrary)
         : DlgPreferencePage(parent),
           m_pConfig(pConfig),
           m_colorPaletteSettings(ColorPaletteSettings(pConfig)),

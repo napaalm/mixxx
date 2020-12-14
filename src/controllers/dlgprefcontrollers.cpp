@@ -11,8 +11,8 @@
 
 DlgPrefControllers::DlgPrefControllers(DlgPreferences* pPreferences,
         UserSettingsPointer pConfig,
-        ControllerManager* pControllerManager,
-        QTreeWidgetItem* pControllersRootItem)
+        std::shared_ptr<ControllerManager> pControllerManager,
+        QTreeWidgetItem* pControllerTreeItem)
         : DlgPreferencePage(pPreferences),
           m_pDlgPreferences(pPreferences),
           m_pConfig(pConfig),
@@ -30,7 +30,7 @@ DlgPrefControllers::DlgPrefControllers(DlgPreferences* pPreferences,
             [this, presetsPath] { slotOpenLocalFile(presetsPath); });
 
     // Connections
-    connect(m_pControllerManager,
+    connect(m_pControllerManager.get(),
             &ControllerManager::devicesChanged,
             this,
             &DlgPrefControllers::rescanControllers);

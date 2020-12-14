@@ -5,10 +5,11 @@
 #include <QEvent>
 #include <QRect>
 #include <QStringList>
+#include <memory>
 
 #include "control/controlpushbutton.h"
-#include "preferences/dialog/dlgpreferencepage.h"
 #include "preferences/dialog/ui_dlgpreferencesdlg.h"
+#include "preferences/dlgpreferencepage.h"
 #include "preferences/settingsmanager.h"
 #include "preferences/usersettings.h"
 
@@ -53,16 +54,27 @@ class DlgPrefModplug;
 class DlgPreferences : public QDialog, public Ui::DlgPreferencesDlg {
     Q_OBJECT
   public:
-    DlgPreferences(MixxxMainWindow* pMixxx,
-            SkinLoader* pSkinLoader,
-            SoundManager* pSoundManager,
-            PlayerManager* pPlayerManager,
-            ControllerManager* pControllerManager,
-            VinylControlManager* pVCManager,
+    struct PreferencesPage {
+        PreferencesPage() {
+        }
+        PreferencesPage(DlgPreferencePage* pDlg, QTreeWidgetItem* pTreeItem)
+                : pDlg(pDlg), pTreeItem(pTreeItem) {
+        }
+
+        DlgPreferencePage* pDlg;
+        QTreeWidgetItem* pTreeItem;
+    };
+
+    DlgPreferences(MixxxMainWindow* mixxx,
+            std::shared_ptr<SkinLoader> pSkinLoader,
+            std::shared_ptr<SoundManager> soundman,
+            std::shared_ptr<PlayerManager> pPlayerManager,
+            std::shared_ptr<ControllerManager> pControllerManager,
+            std::shared_ptr<VinylControlManager> pVCManager,
             LV2Backend* pLV2Backend,
-            EffectsManager* pEffectsManager,
-            SettingsManager* pSettingsManager,
-            Library* pLibrary);
+            std::shared_ptr<EffectsManager> pEffectsManager,
+            std::shared_ptr<SettingsManager> pSettingsManager,
+            std::shared_ptr<Library> pLibrary);
     virtual ~DlgPreferences();
 
     void addPageWidget(DlgPreferencePage* pWidget,
