@@ -17,6 +17,8 @@ CmdlineArgs::CmdlineArgs()
           m_useVuMeterGL(true),
           m_debugAssertBreak(false),
           m_settingsPathSet(false),
+          m_engineCpuId(-1),
+          m_engineCpuSet(),
           m_logLevel(mixxx::kLogLevelDefault),
           m_logFlushLevel(mixxx::kLogFlushLevelDefault),
 // We are not ready to switch to XDG folders under Linux, so keeping $HOME/.mixxx as preferences folder. see lp:1463273
@@ -97,6 +99,18 @@ warnings and errors to the console unless this is set properly.\n", stdout);
                 fputs("\nlogFushLevel argument wasn't 'trace', 'debug', 'info', 'warning', or 'critical'! Mixxx will only flush messages to mixxx.log\n\
 when a critical error occurs unless this is set properly.\n", stdout);
             }
+            i++;
+        } else if (argv[i] == QString("--engineCpuId") && i+1 < argc) {
+            bool ok = false;
+            quint32 engineCpu = QString(argv[i+1]).toUInt(&ok);
+            if (!ok) {
+                qWarning() << "engineCpuId is not a valid number";
+            } else {
+                m_engineCpuId = static_cast<qint64>(engineCpu);
+            }
+            i++;
+        } else if (argv[i] == QString("--engineCpuSet") && i+1 < argc) {
+            m_engineCpuSet = QString::fromLocal8Bit(argv[i+1]);
             i++;
         } else if (QString::fromLocal8Bit(argv[i]).contains(
                            "--disableVuMeterGL", Qt::CaseInsensitive)) {

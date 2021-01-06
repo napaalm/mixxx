@@ -31,6 +31,12 @@ class CmdlineArgs final {
     bool getUseVuMeterGL() const {
         return m_useVuMeterGL;
     }
+    qint64 getEngineCpuId() const {
+        return m_engineCpuId;
+    }
+    const QString& getEngineCpuSet() const {
+        return m_engineCpuSet;
+    }
     bool getDebugAssertBreak() const { return m_debugAssertBreak; }
     bool getSettingsPathSet() const { return m_settingsPathSet; }
     mixxx::LogLevel getLogLevel() const { return m_logLevel; }
@@ -53,6 +59,8 @@ class CmdlineArgs final {
     bool m_useVuMeterGL;
     bool m_debugAssertBreak;
     bool m_settingsPathSet; // has --settingsPath been set on command line ?
+    qint64 m_engineCpuId;
+    QString m_engineCpuSet;
     mixxx::LogLevel m_logLevel; // Level of stderr logging message verbosity
     mixxx::LogLevel m_logFlushLevel; // Level of mixx.log file flushing
     QString m_locale;
