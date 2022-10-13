@@ -32,12 +32,11 @@ GLSLWaveformWidget::GLSLWaveformWidget(
         QWidget* parent,
         bool rgbRenderer)
         : GLWaveformWidgetAbstract(group, parent) {
-    qDebug() << "Created QGLWidget. Context"
-             << "Valid:" << context()->isValid()
-             << "Sharing:" << context()->isSharing();
-    if (QGLContext::currentContext() != context()) {
-        makeCurrent();
-    }
+    qDebug() << "Created WGLWidget. Context"
+             << "Valid:" << isContextValid()
+             << "Sharing:" << isContextSharing();
+
+    makeCurrentIfNeeded();
 
     addRenderer<WaveformRenderBackground>();
     addRenderer<WaveformRendererEndOfTrack>();
@@ -54,11 +53,6 @@ GLSLWaveformWidget::GLSLWaveformWidget(
 #endif // QT_NO_OPENGL && !QT_OPENGL_ES_2
     addRenderer<WaveformRenderBeat>();
     addRenderer<WaveformRenderMark>();
-
-    setAttribute(Qt::WA_NoSystemBackground);
-    setAttribute(Qt::WA_OpaquePaintEvent);
-
-    setAutoBufferSwap(false);
 
     m_initSuccess = init();
 }
@@ -78,7 +72,7 @@ mixxx::Duration GLSLWaveformWidget::render() {
     timer.start();
     // QPainter makes QGLContext::currentContext() == context()
     // this may delayed until previous buffer swap finished
-    QPainter painter(this);
+    QPainter painter(paintDevice());
     t1 = timer.restart();
     draw(&painter, nullptr);
     //t2 = timer.restart();
@@ -89,13 +83,13 @@ mixxx::Duration GLSLWaveformWidget::render() {
 void GLSLWaveformWidget::resize(int width, int height) {
     // NOTE: (vrince) this is needed since we allocation buffer on resize
     // and the Gl Context should be properly set
-    makeCurrent();
+    makeCurrentIfNeeded();
     WaveformWidgetAbstract::resize(width, height);
 }
 
 void GLSLWaveformWidget::mouseDoubleClickEvent(QMouseEvent *event) {
     if (event->button() == Qt::RightButton) {
-        makeCurrent();
+        makeCurrentIfNeeded();
 #if !defined(QT_NO_OPENGL) && !defined(QT_OPENGL_ES_2)
         if (m_signalRenderer) {
             m_signalRenderer->debugClick();

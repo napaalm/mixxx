@@ -108,7 +108,36 @@ if(NOT CMAKE_CONFIGURATION_TYPES)
   endif()
 endif()
 
-project(mixxx VERSION 2.3.4)
+option(QT6 "Build with Qt6" OFF)
+if(APPLE)
+  option(QOPENGL "Use QOpenGL... classes instead of QGLWidget" ON)
+else()
+  option(QOPENGL "Use QOpenGL... classes instead of QGLWidget" OFF)
+endif()
+
+if(QOPENGL)
+  add_compile_definitions(MIXXX_USE_QOPENGL)
+endif()
+
+if(APPLE)
+  if(QT6)
+    # Minimum macOS version supported by Qt 6
+    set(CMAKE_OSX_DEPLOYMENT_TARGET 10.15 CACHE STRING "Minimum macOS version the build will be able to run on")
+    if(NOT VCPKG_TARGET_TRIPLET)
+      set(VCPKG_TARGET_TRIPLET "x64-osx-min10.15")
+    endif()
+  else()
+    # Minimum macOS version supported by Qt 5.12
+    set(CMAKE_OSX_DEPLOYMENT_TARGET 10.12 CACHE STRING "Minimum macOS version the build will be able to run on")
+    if(NOT VCPKG_TARGET_TRIPLET)
+      set(VCPKG_TARGET_TRIPLET "x64-osx-min1012")
+    endif()
+    # Needed for deployment target < 10.14
+    add_compile_options(-fno-aligned-allocation)
+  endif()
+endif()
+
+project(mixxx VERSION 2.5.0)
 # Work around missing version suffixes support https://gitlab.kitware.com/cmake/cmake/-/issues/16716
 set(MIXXX_VERSION_PRERELEASE "") # set to "alpha-pre" "beta" or ""
 
@@ -1053,6 +1082,109 @@ add_library(mixxx-lib STATIC EXCLUDE_FROM_ALL
   src/widget/wwidgetstack.cpp
   src/widget/wraterange.cpp
 )
+if(QT6)
+  target_sources(mixxx-lib PRIVATE
+    src/qml/asyncimageprovider.cpp
+    src/qml/qmlapplication.cpp
+    src/qml/qmlcontrolproxy.cpp
+    src/qml/qmlconfigproxy.cpp
+    src/qml/qmldlgpreferencesproxy.cpp
+    src/qml/qmleffectmanifestparametersmodel.cpp
+    src/qml/qmleffectsmanagerproxy.cpp
+    src/qml/qmleffectslotproxy.cpp
+    src/qml/qmllibraryproxy.cpp
+    src/qml/qmllibrarytracklistmodel.cpp
+    src/qml/qmlplayermanagerproxy.cpp
+    src/qml/qmlplayerproxy.cpp
+    src/qml/qmlvisibleeffectsmodel.cpp
+    src/qml/qmlwaveformoverview.cpp
+  )
+else()
+  target_sources(mixxx-lib PRIVATE
+    src/mixxxmainwindow.cpp
+    src/waveform/guitick.cpp
+    src/waveform/renderers/glslwaveformrenderersignal.cpp
+    src/waveform/renderers/glvsynctestrenderer.cpp
+    src/waveform/renderers/glwaveformrendererfilteredsignal.cpp
+    src/waveform/renderers/glwaveformrendererrgb.cpp
+    src/waveform/renderers/glwaveformrenderersimplesignal.cpp
+    src/waveform/renderers/qtvsynctestrenderer.cpp
+    src/waveform/renderers/qtwaveformrendererfilteredsignal.cpp
+    src/waveform/renderers/qtwaveformrenderersimplesignal.cpp
+    src/waveform/renderers/waveformmark.cpp
+    src/waveform/renderers/waveformmarkrange.cpp
+    src/waveform/renderers/waveformmarkset.cpp
+    src/waveform/renderers/waveformrenderbackground.cpp
+    src/waveform/renderers/waveformrenderbeat.cpp
+    src/waveform/renderers/waveformrendererabstract.cpp
+    src/waveform/renderers/waveformrendererendoftrack.cpp
+    src/waveform/renderers/waveformrendererfilteredsignal.cpp
+    src/waveform/renderers/waveformrendererhsv.cpp
+    src/waveform/renderers/waveformrendererpreroll.cpp
+    src/waveform/renderers/waveformrendererrgb.cpp
+    src/waveform/renderers/waveformrenderersignalbase.cpp
+    src/waveform/renderers/waveformrendermark.cpp
+    src/waveform/renderers/waveformrendermarkrange.cpp
+    src/waveform/renderers/waveformsignalcolors.cpp
+    src/waveform/renderers/waveformwidgetrenderer.cpp
+    src/waveform/visualsmanager.cpp
+    src/waveform/vsyncthread.cpp
+    src/waveform/waveformmarklabel.cpp
+    src/waveform/waveformwidgetfactory.cpp
+    src/waveform/widgets/emptywaveformwidget.cpp
+    src/waveform/widgets/glwaveformwidgetabstract.cpp
+    src/waveform/widgets/glrgbwaveformwidget.cpp
+    src/waveform/widgets/glsimplewaveformwidget.cpp
+    src/waveform/widgets/glslwaveformwidget.cpp
+    src/waveform/widgets/glvsynctestwidget.cpp
+    src/waveform/widgets/glwaveformwidget.cpp
+    src/waveform/widgets/hsvwaveformwidget.cpp
+    src/waveform/widgets/qthsvwaveformwidget.cpp
+    src/waveform/widgets/qtrgbwaveformwidget.cpp
+    src/waveform/widgets/qtsimplewaveformwidget.cpp
+    src/waveform/widgets/qtvsynctestwidget.cpp
+    src/waveform/widgets/qtwaveformwidget.cpp
+    src/waveform/widgets/rgbwaveformwidget.cpp
+    src/waveform/widgets/softwarewaveformwidget.cpp
+    src/waveform/widgets/waveformwidgetabstract.cpp
+    src/widget/woverview.cpp
+    src/widget/woverviewhsv.cpp
+    src/widget/woverviewlmh.cpp
+    src/widget/woverviewrgb.cpp
+    src/widget/wwaveformviewer.cpp
+  )
+  if(QOPENGL)
+    target_sources(mixxx-lib PRIVATE
+      src/widget/openglwindow.cpp
+      src/widget/wglwidgetqopengl.cpp
+      src/widget/qopengl/wvumetergl.cpp
+      src/widget/qopengl/wspinny.cpp
+      src/waveform/renderers/qopengl/shaderloader.cpp
+      src/waveform/renderers/qopengl/waveformshaderrenderer.cpp
+      src/waveform/renderers/qopengl/waveformrenderbackground.cpp
+      src/waveform/renderers/qopengl/waveformrenderbeat.cpp
+      src/waveform/renderers/qopengl/waveformrenderer.cpp
+      src/waveform/renderers/qopengl/waveformrendererendoftrack.cpp
+      src/waveform/renderers/qopengl/waveformrendererpreroll.cpp
+      src/waveform/renderers/qopengl/waveformrendererrgb.cpp
+      src/waveform/renderers/qopengl/waveformrenderersignalbase.cpp
+      src/waveform/renderers/qopengl/waveformrendermark.cpp
+      src/waveform/renderers/qopengl/waveformrendermarkrange.cpp
+      src/waveform/widgets/qopengl/waveformwidget.cpp
+      src/waveform/widgets/qopengl/rgbwaveformwidget.cpp
+      src/waveform/widgets/qopengl/waveformwidget.cpp
+      src/waveform/widgets/qopengl/rgbwaveformwidget.cpp
+    )
+  else()
+    target_sources(mixxx-lib PRIVATE
+      src/waveform/sharedglcontext.cpp
+      src/widget/wglwidgetqglwidget.cpp
+      src/widget/wvumetergl.cpp
+      src/widget/wspinny.cpp
+    )
+  endif()
+endif()
+
 set_target_properties(mixxx-lib PROPERTIES AUTOMOC ON AUTOUIC ON CXX_CLANG_TIDY "${CLANG_TIDY}")
 target_include_directories(mixxx-lib PUBLIC src "${CMAKE_CURRENT_BINARY_DIR}/src")
 if(UNIX AND NOT APPLE)

@@ -1287,9 +1287,17 @@ QWidget* LegacySkinParser::parseSpinny(const QDomElement& node) {
     connect(pWaveformWidgetFactory,
             &WaveformWidgetFactory::renderSpinnies,
             pSpinny,
-            &WSpinny::render);
-    connect(pWaveformWidgetFactory, &WaveformWidgetFactory::swapSpinnies, pSpinny, &WSpinny::swap);
-    connect(pSpinny, &WSpinny::trackDropped, m_pPlayerManager, &PlayerManager::slotLoadToPlayer);
+            &WSpinny::render,
+            Qt::DirectConnection);
+    connect(pWaveformWidgetFactory,
+            &WaveformWidgetFactory::swapSpinnies,
+            pSpinny,
+            &WSpinny::swap,
+            Qt::DirectConnection);
+    connect(pSpinny,
+            &WSpinny::trackDropped,
+            m_pPlayerManager,
+            &PlayerManager::slotLoadLocationToPlayerMaybePlay);
     connect(pSpinny, &WSpinny::cloneDeck, m_pPlayerManager, &PlayerManager::slotCloneDeck);
 
     pSpinny->setup(node, *m_pContext);
@@ -1310,7 +1318,7 @@ QWidget* LegacySkinParser::parseVuMeter(const QDomElement& node) {
         return pVuMeterWidget;
     }
 
-    // QGLWidget derived WVuMeterGL
+    // WGLWidget derived WVuMeterGL
 
     if (CmdlineArgs::Instance().getSafeMode()) {
         WLabel* dummy = new WLabel(m_pParent);

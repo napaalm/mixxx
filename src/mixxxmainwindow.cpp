@@ -2,13 +2,11 @@
 
 #include <QDesktopServices>
 #include <QFileDialog>
+
+#ifndef MIXXX_USE_QOPENGL
 #include <QGLFormat>
-#include <QGLWidget>
-#include <QGuiApplication>
-#include <QInputMethod>
-#include <QLocale>
-#include <QScreen>
-#include <QStandardPaths>
+#endif
+
 #include <QUrl>
 #include <QtDebug>
 
@@ -131,6 +129,7 @@ MixxxMainWindow::MixxxMainWindow(
         m_pVisualsManager->addDeck(group);
     }
 
+#ifndef MIXXX_USE_QOPENGL
     // Before creating the first skin we need to create a QGLWidget so that all
     // the QGLWidget's we create can use it as a shared QGLContext.
     if (!CmdlineArgs::Instance().getSafeMode() && QGLFormat::hasOpenGL()) {
@@ -160,6 +159,7 @@ MixxxMainWindow::MixxxMainWindow(
         pContextWidget->hide();
         SharedGLContext::setWidget(pContextWidget);
     }
+#endif
 
     WaveformWidgetFactory::createInstance(); // takes a long time
     WaveformWidgetFactory::instance()->setConfig(m_pCoreServices->getSettings());

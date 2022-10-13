@@ -152,6 +152,12 @@ class WaveformWidgetRenderer {
         m_playMarkerPosition = newPos;
     }
 
+    void setPassThroughEnabled(bool enabled);
+
+    bool shouldOnlyDrawBackground() const {
+        return m_trackSamples <= 0.0 || m_playPos == -1;
+    }
+
   protected:
     const QString m_group;
     TrackPointer m_pTrack;
