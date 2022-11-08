@@ -90,8 +90,7 @@ class EngineBuffer : public EngineObject {
     constexpr static std::initializer_list<KeylockEngine> kKeylockEngines = {
             KeylockEngine::SoundTouch,
             KeylockEngine::RubberBandFaster,
-            KeylockEngine::RubberBandFiner,
-    };
+            KeylockEngine::RubberBandFiner};
 
     // This value is used to make sure the initial seek after loading a track is
     // not omitted. Therefore this value must be different for 0.0 or any likely
