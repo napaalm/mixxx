@@ -722,17 +722,7 @@ void WaveformWidgetFactory::render() {
                 if (!shouldRenderWaveforms[static_cast<int>(i)]) {
                     continue;
                 }
-#ifdef MIXXX_USE_QOPENGL
-                qopengl::IWaveformWidget* qopenglWaveformWidget =
-                        pWaveformWidget->qopenglWaveformWidget();
-                if (qopenglWaveformWidget) {
-                    qopenglWaveformWidget->renderGL();
-                } else {
-                    pWaveformWidget->render();
-                }
-#else
                 pWaveformWidget->render();
-#endif
                 //qDebug() << "render" << i << m_vsyncThread->elapsed();
             }
         }
