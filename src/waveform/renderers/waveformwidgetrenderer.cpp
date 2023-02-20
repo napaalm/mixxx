@@ -50,7 +50,9 @@ WaveformWidgetRenderer::WaveformWidgetRenderer(const QString& group)
           m_trackSamples(0.0),
           m_scaleFactor(1.0),
           m_playMarkerPosition(s_defaultPlayMarkerPosition),
-          m_playPos(-1) {
+          m_passthroughEnabled(false),
+          m_playPos(-1.0),
+          m_truePosSample(-1.0) {
     //qDebug() << "WaveformWidgetRenderer";
 
 #ifdef WAVEFORMWIDGETRENDERER_DEBUG
@@ -146,7 +148,7 @@ void WaveformWidgetRenderer::onPreRender(VSyncThread* vsyncThread) {
         m_playPos = round(truePlayPos * m_trackPixelCount) / m_trackPixelCount;
         m_totalVSamples = static_cast<int>(m_trackPixelCount * m_visualSamplePerPixel);
         m_playPosVSample = static_cast<int>(m_playPos * m_totalVSamples);
-
+        m_truePosSample = truePlayPos * static_cast<double>(m_trackSamples);
         double leftOffset = m_playMarkerPosition;
         double rightOffset = 1.0 - m_playMarkerPosition;
 
@@ -163,7 +165,8 @@ void WaveformWidgetRenderer::onPreRender(VSyncThread* vsyncThread) {
         m_firstDisplayedPosition = m_playPos - displayedLengthLeft;
         m_lastDisplayedPosition = m_playPos + displayedLengthRight;
     } else {
-        m_playPos = -1; // disable renderers
+        m_playPos = -1.0; // disable renderers
+        m_truePosSample = -1.0;
     }
 
     //qDebug() << "WaveformWidgetRenderer::onPreRender" <<
