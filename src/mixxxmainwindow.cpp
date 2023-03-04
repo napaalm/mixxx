@@ -5,7 +5,9 @@
 
 #include "widget/wglwidget.h"
 
-#ifndef MIXXX_USE_QOPENGL
+#ifdef MIXXX_USE_QOPENGL
+#include "widget/tooltipqopengl.h"
+#else
 #include <QGLFormat>
 #endif
 
@@ -117,7 +119,42 @@ MixxxMainWindow::MixxxMainWindow(
             this,
             &MixxxMainWindow::initializationProgressUpdate);
 
-    m_pCoreServices->initialize(pApp);
+void MixxxMainWindow::initialize() {
+    m_pCoreServices->getControlIndicatorTimer()->setLegacyVsyncEnabled(true);
+
+    UserSettingsPointer pConfig = m_pCoreServices->getSettings();
+
+    // Set the visibility of tooltips, default "1" = ON
+    m_toolTipsCfg = static_cast<mixxx::TooltipsPreference>(
+            pConfig->getValue(ConfigKey("[Controls]", "Tooltips"),
+                    static_cast<int>(mixxx::TooltipsPreference::TOOLTIPS_ON)));
+#ifdef MIXXX_USE_QOPENGL
+    ToolTipQOpenGL::singleton()->setActive(m_toolTipsCfg == mixxx::TooltipsPreference::TOOLTIPS_ON);
+#endif
+
+#ifdef __ENGINEPRIME__
+    // Initialise library exporter
+    // This has to be done before switching to fullscreen
+    m_pLibraryExporter = m_pCoreServices->getLibrary()->makeLibraryExporter(this);
+    connect(m_pCoreServices->getLibrary().get(),
+            &Library::exportLibrary,
+            m_pLibraryExporter.get(),
+            &mixxx::LibraryExporter::slotRequestExport);
+    connect(m_pCoreServices->getLibrary().get(),
+            &Library::exportCrate,
+            m_pLibraryExporter.get(),
+            &mixxx::LibraryExporter::slotRequestExportWithInitialCrate);
+#endif
+
+    // Turn on fullscreen mode
+    // if we were told to start in fullscreen mode on the command-line
+    // or if the user chose to always start in fullscreen mode.
+    // Remember to refresh the Fullscreen menu item after connectMenuBar()
+    bool fullscreenPref = m_pCoreServices->getSettings()->getValue<bool>(
+            ConfigKey("[Config]", "StartInFullscreen"));
+    if (CmdlineArgs::Instance().getStartInFullscreen() || fullscreenPref) {
+        showFullScreen();
+    }
 
     initializationProgressUpdate(65, tr("skin"));
 
@@ -392,8 +429,9 @@ MixxxMainWindow::~MixxxMainWindow() {
 
     delete m_pGuiTick;
     delete m_pVisualsManager;
-
-    m_pCoreServices->shutdown();
+#ifdef MIXXX_USE_QOPENGL
+    delete ToolTipQOpenGL::singleton();
+#endif
 }
 
 void MixxxMainWindow::initializeWindow() {
@@ -930,6 +968,9 @@ void MixxxMainWindow::setToolTipsCfg(mixxx::TooltipsPreference tt) {
     pConfig->set(ConfigKey("[Controls]","Tooltips"),
                  ConfigValue(static_cast<int>(tt)));
     m_toolTipsCfg = tt;
+#ifdef MIXXX_USE_QOPENGL
+    ToolTipQOpenGL::singleton()->setActive(m_toolTipsCfg == mixxx::TooltipsPreference::TOOLTIPS_ON);
+#endif
 }
 
 void MixxxMainWindow::rebootMixxxView() {

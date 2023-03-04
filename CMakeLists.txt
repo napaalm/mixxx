@@ -1156,6 +1156,7 @@ else()
     target_sources(mixxx-lib PRIVATE
       src/widget/openglwindow.cpp
       src/widget/wglwidgetqopengl.cpp
+      src/widget/tooltipqopengl.cpp
       src/widget/qopengl/wvumetergl.cpp
       src/widget/qopengl/wspinny.cpp
       src/waveform/renderers/qopengl/shaderloader.cpp
