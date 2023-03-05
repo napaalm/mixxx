@@ -33,8 +33,84 @@ int runMixxx(MixxxApplication* app, const CmdlineArgs& args) {
         qDebug() << "Displaying main window";
         mainWindow.show();
 
-        qDebug() << "Running Mixxx";
-        return app->exec();
+int runMixxx(MixxxApplication* pApp, const CmdlineArgs& args) {
+    const auto pCoreServices = std::make_shared<mixxx::CoreServices>(args, pApp);
+
+    CmdlineArgs::Instance().parseForUserFeedback();
+
+    int exitCode;
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+    mixxx::qml::QmlApplication qmlApplication(pApp, pCoreServices);
+    exitCode = pApp->exec();
+#else
+    {
+        // This scope ensures that `MixxxMainWindow` is destroyed *before*
+        // CoreServices is shut down. Otherwise a debug assertion complaining about
+        // leaked COs may be triggered.
+        MixxxMainWindow mainWindow(pCoreServices);
+        pApp->processEvents();
+        pApp->installEventFilter(&mainWindow);
+
+        QObject::connect(pCoreServices.get(),
+                &mixxx::CoreServices::initializationProgressUpdate,
+                &mainWindow,
+                &MixxxMainWindow::initializationProgressUpdate);
+        pCoreServices->initialize(pApp);
+
+#ifdef MIXXX_USE_QOPENGL
+        // Will call initialize when the initial wglwidget's
+        // qopenglwindow has been exposed
+        mainWindow.initializeQOpenGL();
+#else
+        mainWindow.initialize();
+#endif
+
+        pCoreServices->getControllerManager()->setUpDevices();
+
+        // If startup produced a fatal error, then don't even start the
+        // Qt event loop.
+        if (ErrorDialogHandler::instance()->checkError()) {
+            exitCode = kFatalErrorOnStartupExitCode;
+        } else {
+            qDebug() << "Displaying main window";
+            mainWindow.show();
+
+            qDebug() << "Running Mixxx";
+            exitCode = pApp->exec();
+        }
+    }
+#endif
+    return exitCode;
+}
+
+void adjustScaleFactor(CmdlineArgs* pArgs) {
+    if (qEnvironmentVariableIsSet(kScaleFactorEnvVar)) {
+        bool ok;
+        const double f = qgetenv(kScaleFactorEnvVar).toDouble(&ok);
+        if (ok && f > 0) {
+            // The environment variable overrides the preferences option
+            qDebug() << "Using" << kScaleFactorEnvVar << f;
+            pArgs->setScaleFactor(f);
+            return;
+        }
+    }
+    // We cannot use SettingsManager, because it depends on MixxxApplication
+    // but the scale factor is read during it's constructor.
+    // QHighDpiScaling can not be used afterwards because it is private.
+    // This means the following code may fail after down/upgrade ... a one time issue.
+
+    // Read and parse the config file from the settings path
+    auto config = ConfigObject<ConfigValue>(
+            QDir(pArgs->getSettingsPath()).filePath(MIXXX_SETTINGS_FILE),
+            QString(),
+            QString());
+    QString strScaleFactor = config.getValue(
+            ConfigKey(kConfigGroup, kScaleFactorKey));
+    double scaleFactor = strScaleFactor.toDouble();
+    if (scaleFactor > 0) {
+        qDebug() << "Using preferences ScaleFactor" << scaleFactor;
+        qputenv(kScaleFactorEnvVar, strScaleFactor.toLocal8Bit());
+        pArgs->setScaleFactor(scaleFactor);
     }
 }
 

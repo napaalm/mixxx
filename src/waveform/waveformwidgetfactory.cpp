@@ -125,8 +125,6 @@ WaveformWidgetFactory::WaveformWidgetFactory()
 #ifdef MIXXX_USE_QOPENGL
     WGLWidget* widget = SharedGLContext::getWidget();
     if (widget) {
-        // we need to show the widget so it's QOpenGLWindow is created
-        widget->show();
         widget->makeCurrentIfNeeded();
         auto context = QOpenGLContext::currentContext();
         if (context) {
