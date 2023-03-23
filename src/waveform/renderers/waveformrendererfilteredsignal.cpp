@@ -30,28 +30,23 @@ void WaveformRendererFilteredSignal::onSetup(const QDomNode& node) {
 
 void WaveformRendererFilteredSignal::draw(QPainter* painter,
                                           QPaintEvent* /*event*/) {
-    ConstWaveformPointer pWaveform = m_waveformRenderer->getWaveform();
-    if (pWaveform.isNull()) {
+    const TrackPointer trackInfo = m_waveformRenderer->getTrackInfo();
+    if (!trackInfo) {
         return;
     }
 
-    const double audioVisualRatio = pWaveform->getAudioVisualRatio();
-    if (audioVisualRatio <= 0) {
+    ConstWaveformPointer waveform = trackInfo->getWaveform();
+    if (waveform.isNull()) {
         return;
     }
 
-    const int dataSize = pWaveform->getDataSize();
+    const int dataSize = waveform->getDataSize();
     if (dataSize <= 1) {
         return;
     }
 
-    const WaveformData* data = pWaveform->data();
+    const WaveformData* data = waveform->data();
     if (data == nullptr) {
-        return;
-    }
-
-    const int trackSamples = m_waveformRenderer->getTrackSamples();
-    if (trackSamples <= 0) {
         return;
     }
 
@@ -67,12 +62,8 @@ void WaveformRendererFilteredSignal::draw(QPainter* painter,
         painter->setTransform(QTransform(0, 1, 1, 0, 0, 0));
     }
 
-    const double firstVisualIndex =
-            m_waveformRenderer->getFirstDisplayedPosition() * trackSamples /
-            audioVisualRatio;
-    const double lastVisualIndex =
-            m_waveformRenderer->getLastDisplayedPosition() * trackSamples /
-            audioVisualRatio;
+    const double firstVisualIndex = m_waveformRenderer->getFirstDisplayedPosition() * dataSize;
+    const double lastVisualIndex = m_waveformRenderer->getLastDisplayedPosition() * dataSize;
 
     // Represents the # of waveform data points per horizontal pixel.
     const double gain = (lastVisualIndex - firstVisualIndex) /
