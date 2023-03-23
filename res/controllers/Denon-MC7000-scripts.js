@@ -149,6 +149,11 @@ MC7000.prevVuLevel = [0, 0, 0, 0];
 MC7000.prevJogLED = [0, 0, 0, 0];
 MC7000.prevPadLED = [0, 0, 0, 0];
 
+// Saved beat loop size per deck - restored after releasing all roll buttons
+MC7000.beatLoopSizeBeforeRoll = [undefined, undefined, undefined, undefined];
+// The number of currently pressed roll buttons per deck.
+MC7000.activeRollButtonCount = [0, 0, 0, 0];
+
 // Param Buttons for Pitch Play
 MC7000.paramButton = [0, 0, 0, 0];
 
@@ -442,12 +447,29 @@ MC7000.PadButtons = function(channel, control, value, status, group) {
     } else if (MC7000.PADMode[deckIndex] === "Roll") {
         // TODO(all): check for actual beatloop_size and apply back after a PAD Roll
         i = control - 0x14;
-        if (control === 0x14 + i && value > 0x00) {
+        if (MC7000.activeRollButtonCount[deckIndex] < 0) {
+            print("MC7000: Inconsistent internal state, activeRollButtonCount should never be < 0, resetting it to 0");
+            MC7000.activeRollButtonCount[deckIndex] = 0;
+        }
+        if (value > 0x00) {
+            // Save loop size if no roll buttons have been pressed yet
+            if (MC7000.activeRollButtonCount[deckIndex] === 0) {
+                MC7000.beatLoopSizeBeforeRoll[deckIndex] = engine.getValue(group, "beatloop_size");
+            }
+            // Active roll loop
+            MC7000.activeRollButtonCount[deckIndex]++;
             engine.setValue(group, "beatlooproll_" + MC7000.beatLoopRoll[i] + "_activate", true);
             midi.sendShortMsg(0x94 + deckIndex, 0x14 + i, MC7000.padColor.rollon);
-        } else if (control === 0x14 + i && value === 0x00) {
+        } else if (value === 0x00) {
+            // Deactivate roll loop
+            MC7000.activeRollButtonCount[deckIndex]--;
             engine.setValue(group, "beatlooproll_activate", false);
             midi.sendShortMsg(0x94 + deckIndex, 0x14 + i, MC7000.padColor.rolloff);
+            // Restore previous loop size if all buttons have been released
+            if (MC7000.activeRollButtonCount[deckIndex] === 0 && MC7000.beatLoopSizeBeforeRoll[deckIndex]) {
+                engine.setValue(group, "beatloop_size", MC7000.beatLoopSizeBeforeRoll[deckIndex]);
+                MC7000.beatLoopSizeBeforeRoll[deckIndex] = undefined;
+            }
         }
     } else if (MC7000.PADMode[deckIndex] === "SavedLoop") {
         if (value === 0x00) {
