@@ -772,7 +772,7 @@ QString Track::getURL() const {
     return m_record.getUrl();
 }
 
-const ConstWaveformPointer& Track::getWaveform() const {
+ConstWaveformPointer Track::getWaveform() const {
     return m_waveform;
 }
 

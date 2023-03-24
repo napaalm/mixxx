@@ -78,14 +78,18 @@ bool GLSLWaveformRendererSignal::loadShaders() {
 }
 
 bool GLSLWaveformRendererSignal::loadTexture() {
+    TrackPointer trackInfo = m_waveformRenderer->getTrackInfo();
+    ConstWaveformPointer waveform;
     int dataSize = 0;
     const WaveformData* data = nullptr;
 
-    ConstWaveformPointer pWaveform = m_waveformRenderer->getWaveform();
-    if (pWaveform) {
-        dataSize = pWaveform->getDataSize();
-        if (dataSize > 1) {
-            data = pWaveform->data();
+    if (trackInfo) {
+        waveform = trackInfo->getWaveform();
+        if (waveform) {
+            dataSize = waveform->getDataSize();
+            if (dataSize > 1) {
+                data = waveform->data();
+            }
         }
     }
 
@@ -110,11 +114,11 @@ bool GLSLWaveformRendererSignal::loadTexture() {
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 
-    if (pWaveform != nullptr && data != nullptr) {
+    if (waveform != nullptr && data != nullptr) {
         // Waveform ensures that getTextureSize is a multiple of
         // getTextureStride so there is no rounding here.
-        int textureWidth = pWaveform->getTextureStride();
-        int textureHeight = pWaveform->getTextureSize() / pWaveform->getTextureStride();
+        int textureWidth = waveform->getTextureStride();
+        int textureHeight = waveform->getTextureSize() / waveform->getTextureStride();
 
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, textureWidth, textureHeight, 0,
                      GL_RGBA, GL_UNSIGNED_BYTE, data);
@@ -218,7 +222,7 @@ void GLSLWaveformRendererSignal::onSetTrack() {
 
     slotWaveformUpdated();
 
-    const TrackPointer pTrack = m_waveformRenderer->getTrackInfo();
+    TrackPointer pTrack = m_waveformRenderer->getTrackInfo();
     if (!pTrack) {
         return;
     }
@@ -252,28 +256,23 @@ void GLSLWaveformRendererSignal::slotWaveformUpdated() {
 }
 
 void GLSLWaveformRendererSignal::draw(QPainter* painter, QPaintEvent* /*event*/) {
-    ConstWaveformPointer pWaveform = m_waveformRenderer->getWaveform();
-    if (pWaveform.isNull()) {
+    TrackPointer trackInfo = m_waveformRenderer->getTrackInfo();
+    if (!trackInfo) {
         return;
     }
 
-    const double audioVisualRatio = pWaveform->getAudioVisualRatio();
-    if (audioVisualRatio <= 0) {
+    ConstWaveformPointer waveform = trackInfo->getWaveform();
+    if (waveform.isNull()) {
         return;
     }
 
-    int dataSize = pWaveform->getDataSize();
+    int dataSize = waveform->getDataSize();
     if (dataSize <= 1) {
         return;
     }
 
-    const WaveformData* data = pWaveform->data();
+    const WaveformData* data = waveform->data();
     if (data == nullptr) {
-        return;
-    }
-
-    const int trackSamples = m_waveformRenderer->getTrackSamples();
-    if (trackSamples <= 0) {
         return;
     }
 
@@ -284,7 +283,7 @@ void GLSLWaveformRendererSignal::draw(QPainter* painter, QPaintEvent* /*event*/)
 
     // NOTE(vRince): completion can change during loadTexture
     // do not remove currenCompletion temp variable !
-    const int currentCompletion = pWaveform->getCompletion();
+    const int currentCompletion = waveform->getCompletion();
     if (m_textureRenderedWaveformCompletion < currentCompletion) {
         loadTexture();
         m_textureRenderedWaveformCompletion = currentCompletion;
@@ -295,10 +294,9 @@ void GLSLWaveformRendererSignal::draw(QPainter* painter, QPaintEvent* /*event*/)
     getGains(&allGain, &lowGain, &midGain, &highGain);
 
     const auto firstVisualIndex = static_cast<GLfloat>(
-            m_waveformRenderer->getFirstDisplayedPosition() * trackSamples /
-            audioVisualRatio / 2.0);
+            m_waveformRenderer->getFirstDisplayedPosition() * dataSize / 2.0);
     const auto lastVisualIndex = static_cast<GLfloat>(
-            m_waveformRenderer->getLastDisplayedPosition() * trackSamples / audioVisualRatio / 2.0);
+            m_waveformRenderer->getLastDisplayedPosition() * dataSize / 2.0);
 
     // const int firstIndex = int(firstVisualIndex+0.5);
     // firstVisualIndex = firstIndex - firstIndex%2;
@@ -331,8 +329,8 @@ void GLSLWaveformRendererSignal::draw(QPainter* painter, QPaintEvent* /*event*/)
         m_frameShaderProgram->setUniformValue("framebufferSize", QVector2D(
             m_framebuffer->width(), m_framebuffer->height()));
         m_frameShaderProgram->setUniformValue("waveformLength", dataSize);
-        m_frameShaderProgram->setUniformValue("textureSize", pWaveform->getTextureSize());
-        m_frameShaderProgram->setUniformValue("textureStride", pWaveform->getTextureStride());
+        m_frameShaderProgram->setUniformValue("textureSize", waveform->getTextureSize());
+        m_frameShaderProgram->setUniformValue("textureStride", waveform->getTextureStride());
 
         m_frameShaderProgram->setUniformValue("firstVisualIndex", firstVisualIndex);
         m_frameShaderProgram->setUniformValue("lastVisualIndex", lastVisualIndex);

@@ -38,28 +38,24 @@ inline void setPoint(QPointF& point, qreal x, qreal y) {
 }
 
 void QtWaveformRendererSimpleSignal::draw(QPainter* painter, QPaintEvent* /*event*/) {
-    ConstWaveformPointer pWaveform = m_waveformRenderer->getWaveform();
-    if (pWaveform.isNull()) {
+
+    TrackPointer pTrack = m_waveformRenderer->getTrackInfo();
+    if (!pTrack) {
         return;
     }
 
-    const double audioVisualRatio = pWaveform->getAudioVisualRatio();
-    if (audioVisualRatio <= 0) {
+    ConstWaveformPointer waveform = pTrack->getWaveform();
+    if (waveform.isNull()) {
         return;
     }
 
-    const int dataSize = pWaveform->getDataSize();
+    const int dataSize = waveform->getDataSize();
     if (dataSize <= 1) {
         return;
     }
 
-    const WaveformData* data = pWaveform->data();
+    const WaveformData* data = waveform->data();
     if (data == nullptr) {
-        return;
-    }
-
-    const int trackSamples = m_waveformRenderer->getTrackSamples();
-    if (trackSamples <= 0) {
         return;
     }
 
@@ -94,12 +90,8 @@ void QtWaveformRendererSimpleSignal::draw(QPainter* painter, QPaintEvent* /*even
         painter->drawLine(0,0,m_waveformRenderer->getLength(),0);
     }
 
-    const double firstVisualIndex =
-            m_waveformRenderer->getFirstDisplayedPosition() * trackSamples /
-            audioVisualRatio;
-    const double lastVisualIndex =
-            m_waveformRenderer->getLastDisplayedPosition() * trackSamples /
-            audioVisualRatio;
+    const double firstVisualIndex = m_waveformRenderer->getFirstDisplayedPosition() * dataSize;
+    const double lastVisualIndex = m_waveformRenderer->getLastDisplayedPosition() * dataSize;
     m_polygon.clear();
     m_polygon.reserve(2 * m_waveformRenderer->getLength() + 2);
     m_polygon.append(QPointF(0.0, 0.0));

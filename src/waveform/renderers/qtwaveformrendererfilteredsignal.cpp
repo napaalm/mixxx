@@ -97,37 +97,28 @@ inline void setPoint(QPointF& point, qreal x, qreal y) {
 int QtWaveformRendererFilteredSignal::buildPolygon() {
     // We have to check the track is present because it might have been unloaded
     // between the call to draw and the call to buildPolygon
-    ConstWaveformPointer pWaveform = m_waveformRenderer->getWaveform();
-    if (pWaveform.isNull()) {
+    TrackPointer pTrack = m_waveformRenderer->getTrackInfo();
+    if (!pTrack) {
         return 0;
     }
 
-    const double audioVisualRatio = pWaveform->getAudioVisualRatio();
-    if (audioVisualRatio <= 0) {
+    ConstWaveformPointer waveform = pTrack->getWaveform();
+    if (waveform.isNull()) {
         return 0;
     }
 
-    const int dataSize = pWaveform->getDataSize();
+    const int dataSize = waveform->getDataSize();
     if (dataSize <= 1) {
         return 0;
     }
 
-    const WaveformData* data = pWaveform->data();
+    const WaveformData* data = waveform->data();
     if (data == nullptr) {
         return 0;
     }
 
-    const int trackSamples = m_waveformRenderer->getTrackSamples();
-    if (trackSamples <= 0) {
-        return 0;
-    }
-
-    const double firstVisualIndex =
-            m_waveformRenderer->getFirstDisplayedPosition() * trackSamples /
-            audioVisualRatio;
-    const double lastVisualIndex =
-            m_waveformRenderer->getLastDisplayedPosition() * trackSamples /
-            audioVisualRatio;
+    const double firstVisualIndex = m_waveformRenderer->getFirstDisplayedPosition() * dataSize;
+    const double lastVisualIndex = m_waveformRenderer->getLastDisplayedPosition() * dataSize;
 
     m_polygon[0].clear();
     m_polygon[1].clear();

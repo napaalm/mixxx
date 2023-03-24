@@ -33,17 +33,22 @@ void QtVSyncTestRenderer::draw(QPainter* pPainter, QPaintEvent* /*event*/) {
 
     timer.start();
 
-    ConstWaveformPointer pWaveform = m_waveformRenderer->getWaveform();
-    if (pWaveform.isNull()) {
+    TrackPointer pTrack = m_waveformRenderer->getTrackInfo();
+    if (!pTrack) {
         return;
     }
 
-    const int dataSize = pWaveform->getDataSize();
+    ConstWaveformPointer waveform = pTrack->getWaveform();
+    if (waveform.isNull()) {
+        return;
+    }
+
+    const int dataSize = waveform->getDataSize();
     if (dataSize <= 1) {
         return;
     }
 
-    const WaveformData* data = pWaveform->data();
+    const WaveformData* data = waveform->data();
     if (data == nullptr) {
         return;
     }
