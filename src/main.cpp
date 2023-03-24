@@ -5,8 +5,6 @@
 #include <QTextCodec>
 #include <QThread>
 #include <QtDebug>
-#include <cstdio>
-#include <stdexcept>
 
 #include "errordialoghandler.h"
 #include "mixxx.h"

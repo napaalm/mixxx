@@ -36,7 +36,6 @@
 #include "waveform/widgets/softwarewaveformwidget.h"
 #include "waveform/widgets/waveformwidgetabstract.h"
 #include "widget/wvumeter.h"
-#include "widget/wvumetergl.h"
 #include "widget/wwaveformviewer.h"
 
 namespace {
@@ -354,27 +353,15 @@ void WaveformWidgetFactory::destroyWidgets() {
     m_waveformWidgetHolders.clear();
 }
 
-void WaveformWidgetFactory::addVuMeter(WVuMeter* pVuMeter) {
+void WaveformWidgetFactory::addTimerListener(WVuMeter* pWidget) {
     // Do not hold the pointer to of timer listeners since they may be deleted.
     // We don't activate update() or repaint() directly so listener widgets
     // can decide whether to paint or not.
     connect(this,
             &WaveformWidgetFactory::waveformUpdateTick,
-            pVuMeter,
+            pWidget,
             &WVuMeter::maybeUpdate,
             Qt::DirectConnection);
-}
-
-void WaveformWidgetFactory::addVuMeter(WVuMeterGL* pVuMeter) {
-    // WVuMeterGLs to be rendered and swapped from the vsync thread
-    connect(this,
-            &WaveformWidgetFactory::renderVuMeters,
-            pVuMeter,
-            &WVuMeterGL::render);
-    connect(this,
-            &WaveformWidgetFactory::swapVuMeters,
-            pVuMeter,
-            &WVuMeterGL::swap);
 }
 
 void WaveformWidgetFactory::slotSkinLoaded() {
@@ -686,9 +673,6 @@ void WaveformWidgetFactory::render() {
         // WSpinnys are also double-buffered QGLWidgets, like all the waveform
         // renderers. Render all the WSpinny widgets now.
         emit renderSpinnies(m_vsyncThread);
-        // Same for WVuMeterGL. Note that we are either using WVuMeter or WVuMeterGL.
-        // If we are using WVuMeter, this does nothing
-        emit renderVuMeters(m_vsyncThread);
 
         // Notify all other waveform-like widgets (e.g. WSpinny's) that they should
         // update.
@@ -745,9 +729,6 @@ void WaveformWidgetFactory::swap() {
         // WSpinnys are also double-buffered QGLWidgets, like all the waveform
         // renderers. Swap all the WSpinny widgets now.
         emit swapSpinnies();
-        // Same for WVuMeterGL. Note that we are either using WVuMeter or WVuMeterGL
-        // If we are using WVuMeter, this does nothing
-        emit swapVuMeters();
     }
     //qDebug() << "swap end" << m_vsyncThread->elapsed();
     m_vsyncThread->vsyncSlotFinished();
