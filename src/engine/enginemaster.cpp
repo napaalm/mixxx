@@ -24,6 +24,7 @@
 #include "moc_enginemaster.cpp"
 #include "preferences/usersettings.h"
 #include "util/cpupinning.h"
+#include "util/threadpriority.h"
 #include "util/defs.h"
 #include "util/sample.h"
 #include "util/timer.h"
@@ -386,6 +387,7 @@ void EngineMaster::processChannels(int iBufferSize) {
 void EngineMaster::finishStartup() {
     QThread::currentThread()->setObjectName("Engine");
 #ifdef __LINUX__
+    mixxx::ThreadPriority::setRealtimePriority(98);
     if (!m_cpuSet.isNull() && !m_cpuSet.isEmpty()) {
         mixxx::CpuPinning::moveThreadToCpuset(m_cpuSet);
     }
