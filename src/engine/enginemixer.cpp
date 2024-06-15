@@ -18,6 +18,7 @@
 #include "mixer/playermanager.h"
 #include "moc_enginemixer.cpp"
 #include "preferences/usersettings.h"
+#include "util/threadpriority.h"
 #include "util/defs.h"
 #include "util/sample.h"
 
@@ -409,6 +410,13 @@ void EngineMixer::processChannels(int iBufferSize) {
 }
 
 void EngineMixer::process(const int iBufferSize) {
+#ifdef __LINUX__
+    static bool haveSetRealtimePriority = false;
+    if (!haveSetRealtimePriority) {
+        mixxx::ThreadPriority::setRealtimePriority(98);
+        haveSetRealtimePriority = true;
+    }
+#endif
     static bool haveSetName = false;
     if (!haveSetName) {
         QThread::currentThread()->setObjectName("Engine");
