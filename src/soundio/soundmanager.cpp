@@ -353,9 +353,7 @@ SoundDeviceStatus SoundManager::setupDevices() {
     // all found devices are removed below
     QSet<SoundDeviceId> devicesNotFound = m_config.getDevices();
 
-    // pair is isInput, isOutput
     QVector<DeviceMode> toOpen;
-    bool haveOutput = false;
     // loop over all available devices
     for (const auto& pDevice : std::as_const(m_devices)) {
         DeviceMode mode = {pDevice, false, false};
@@ -399,9 +397,6 @@ SoundDeviceStatus SoundManager::setupDevices() {
 
         for (const auto& out : std::as_const(outputs)) {
             mode.isOutput = true;
-            if (pDevice->getDeviceId().name != kNetworkDeviceInternalName) {
-                haveOutput = true;
-            }
             // following keeps us from asking for a channel buffer EngineMixer
             // doesn't have -- bkgood
             const CSAMPLE* pBuffer = m_registeredSources.value(out)->buffer(out);
@@ -414,16 +409,6 @@ SoundDeviceStatus SoundManager::setupDevices() {
             status = pDevice->addOutput(aob);
             if (status != SoundDeviceStatus::Ok) {
                 goto closeAndError;
-            }
-
-            if (!m_config.getForceNetworkClock() || jackApiUsed()) {
-                if (out.getType() == AudioPathType::Main) {
-                    pNewMainClockRef = pDevice;
-                } else if ((out.getType() == AudioPathType::Deck ||
-                                   out.getType() == AudioPathType::Bus) &&
-                        !pNewMainClockRef) {
-                    pNewMainClockRef = pDevice;
-                }
             }
 
             // Check if any AudioSource is registered for this AudioOutput and
@@ -447,11 +432,10 @@ SoundDeviceStatus SoundManager::setupDevices() {
         m_pErrorDevice = pDevice;
 
         // If we have not yet set a clock source then we use the first
-        // output pDevice
-        if (pNewMainClockRef.isNull() &&
-                (!haveOutput || mode.isOutput)) {
+        // input pDevice
+        if (pNewMainClockRef.isNull() && mode.isInput) {
             pNewMainClockRef = pDevice;
-            qWarning() << "Output sound device clock reference not set! Using"
+            qWarning() << "Sound device clock reference not set! Using"
                        << pDevice->getDisplayName();
         }
 
@@ -474,11 +458,24 @@ SoundDeviceStatus SoundManager::setupDevices() {
         }
     }
 
+    for (const auto& mode: toOpen) {
+        SoundDevicePointer pDevice = mode.pDevice;
+        m_pErrorDevice = pDevice;
+
+        // If we have not yet set a clock source then we use the first
+        // output pDevice
+        if (pNewMainClockRef.isNull() && mode.isOutput) {
+            pNewMainClockRef = pDevice;
+            qWarning() << "Sound device clock reference not set! Using"
+                       << pDevice->getDisplayName();
+        }
+    }
+
     if (pNewMainClockRef) {
         qDebug() << "Using" << pNewMainClockRef->getDisplayName()
-                 << "as output sound device clock reference";
+                 << "as sound device clock reference";
     } else {
-        qWarning() << "No output devices opened, no clock reference device set";
+        qWarning() << "No devices opened, no clock reference device set";
     }
 
     qDebug() << outputDevicesOpened << "output sound devices opened";
